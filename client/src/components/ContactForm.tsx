@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 import { insertContactSubmissionSchema, type InsertContactSubmission } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,13 +38,9 @@ const services = [
   "Other"
 ];
 
-interface ContactFormProps {
-  onSubmit?: (data: InsertContactSubmission) => void;
-}
-
-export default function ContactForm({ onSubmit }: ContactFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function ContactForm() {
   const [humanVerified, setHumanVerified] = useState(false);
+  const { toast } = useToast();
   
   const form = useForm<InsertContactSubmission>({
     resolver: zodResolver(insertContactSubmissionSchema),
@@ -50,26 +49,44 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
       email: "",
       phone: "",
       company: "",
-      serviceInterest: "",
+      serviceInterest: undefined,
       message: "",
+    },
+  });
+
+  const submitContactMutation = useMutation({
+    mutationFn: async (data: InsertContactSubmission) => {
+      const res = await apiRequest("POST", "/api/contact", data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Message Sent!",
+        description: "Thank you for reaching out. We'll be in touch soon.",
+      });
+      form.reset();
+      setHumanVerified(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
   const handleSubmit = async (data: InsertContactSubmission) => {
     if (!humanVerified) {
+      toast({
+        title: "Verification Required",
+        description: "Please confirm you're human to submit the form.",
+        variant: "destructive",
+      });
       return;
     }
     
-    setIsSubmitting(true);
-    console.log('Form submitted:', data);
-    if (onSubmit) {
-      onSubmit(data);
-    }
-    setTimeout(() => {
-      setIsSubmitting(false);
-      form.reset();
-      setHumanVerified(false);
-    }, 1000);
+    submitContactMutation.mutate(data);
   };
 
   return (
@@ -173,7 +190,11 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Service Interest</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value || undefined}
+                      key={field.value || 'empty'}
+                    >
                       <FormControl>
                         <SelectTrigger data-testid="select-service">
                           <SelectValue placeholder="Select a service" />
@@ -230,10 +251,10 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
                 type="submit" 
                 className="w-full md:w-auto px-12" 
                 size="lg"
-                disabled={isSubmitting || !humanVerified}
+                disabled={submitContactMutation.isPending || !humanVerified}
                 data-testid="button-submit-contact"
               >
-                {isSubmitting ? "Sending..." : "Submit"}
+                {submitContactMutation.isPending ? "Sending..." : "Submit"}
               </Button>
             </form>
           </Form>
