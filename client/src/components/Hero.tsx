@@ -22,7 +22,7 @@ export default function Hero({ onContactClick }: HeroProps) {
           </h1>
           
           <p className="text-xl md:text-2xl text-white/90 max-w-2xl mb-12 leading-relaxed">
-            BIG THINGS, can start small. Try our factional employment & see how we can transform your business!
+            <span className="text-3xl md:text-4xl font-bold">BIG THINGS</span>, can start <span className="text-lg md:text-xl font-light italic">small</span>. Try our <span className="text-2xl md:text-3xl font-bold text-primary">fractional employment</span> & see how we can transform your business!
           </p>
           
           <Button 
