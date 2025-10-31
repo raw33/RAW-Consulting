@@ -5,6 +5,7 @@ import { insertContactSubmissionSchema, type InsertContactSubmission } from "@sh
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -40,6 +41,7 @@ interface ContactFormProps {
 
 export default function ContactForm({ onSubmit }: ContactFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [humanVerified, setHumanVerified] = useState(false);
   
   const form = useForm<InsertContactSubmission>({
     resolver: zodResolver(insertContactSubmissionSchema),
@@ -54,6 +56,10 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
   });
 
   const handleSubmit = async (data: InsertContactSubmission) => {
+    if (!humanVerified) {
+      return;
+    }
+    
     setIsSubmitting(true);
     console.log('Form submitted:', data);
     if (onSubmit) {
@@ -62,6 +68,7 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
     setTimeout(() => {
       setIsSubmitting(false);
       form.reset();
+      setHumanVerified(false);
     }, 1000);
   };
 
@@ -204,11 +211,26 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
                 )}
               />
 
+              <div className="flex items-start gap-3 pt-2">
+                <Checkbox 
+                  id="human-verify"
+                  checked={humanVerified}
+                  onCheckedChange={(checked) => setHumanVerified(checked === true)}
+                  data-testid="checkbox-verify-human"
+                />
+                <label 
+                  htmlFor="human-verify" 
+                  className="text-sm text-muted-foreground cursor-pointer leading-relaxed"
+                >
+                  I'm a human and not a bot *
+                </label>
+              </div>
+
               <Button 
                 type="submit" 
                 className="w-full md:w-auto px-12" 
                 size="lg"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !humanVerified}
                 data-testid="button-submit-contact"
               >
                 {isSubmitting ? "Sending..." : "Submit"}
