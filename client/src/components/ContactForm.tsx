@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import Altcha from "@/components/Altcha";
 import {
   Form,
   FormControl,
@@ -39,7 +39,9 @@ const services = [
 ];
 
 export default function ContactForm() {
-  const [humanVerified, setHumanVerified] = useState(false);
+  const [altchaPayload, setAltchaPayload] = useState<string | null>(null);
+  const [altchaState, setAltchaState] = useState<string>("unverified");
+  const altchaRef = useRef<{ reset: () => void }>(null);
   const { toast } = useToast();
   
   const form = useForm<InsertContactSubmission>({
@@ -55,7 +57,7 @@ export default function ContactForm() {
   });
 
   const submitContactMutation = useMutation({
-    mutationFn: async (data: InsertContactSubmission) => {
+    mutationFn: async (data: InsertContactSubmission & { altcha: string }) => {
       const res = await apiRequest("POST", "/api/contact", data);
       return await res.json();
     },
@@ -65,7 +67,9 @@ export default function ContactForm() {
         description: "Thank you for reaching out. We'll be in touch soon.",
       });
       form.reset();
-      setHumanVerified(false);
+      altchaRef.current?.reset();
+      setAltchaPayload(null);
+      setAltchaState("unverified");
     },
     onError: (error: any) => {
       toast({
@@ -76,17 +80,24 @@ export default function ContactForm() {
     },
   });
 
+  const handleAltchaStateChange = (state: any) => {
+    setAltchaState(state.state);
+    if (state.state === "verified" && state.payload) {
+      setAltchaPayload(state.payload);
+    }
+  };
+
   const handleSubmit = async (data: InsertContactSubmission) => {
-    if (!humanVerified) {
+    if (!altchaPayload || altchaState !== "verified") {
       toast({
         title: "Verification Required",
-        description: "Please confirm you're human to submit the form.",
+        description: "Please complete the CAPTCHA verification to submit the form.",
         variant: "destructive",
       });
       return;
     }
     
-    submitContactMutation.mutate(data);
+    submitContactMutation.mutate({ ...data, altcha: altchaPayload });
   };
 
   return (
@@ -232,26 +243,24 @@ export default function ContactForm() {
                 )}
               />
 
-              <div className="flex items-start gap-3 pt-2">
-                <Checkbox 
-                  id="human-verify"
-                  checked={humanVerified}
-                  onCheckedChange={(checked) => setHumanVerified(checked === true)}
-                  data-testid="checkbox-verify-human"
-                />
-                <label 
-                  htmlFor="human-verify" 
-                  className="text-sm text-muted-foreground cursor-pointer leading-relaxed"
-                >
-                  I'm a human and not a bot *
+              <div className="pt-4" data-testid="altcha-container">
+                <label className="block text-sm font-medium mb-3">
+                  Verify you're human *
                 </label>
+                <Altcha
+                  ref={altchaRef}
+                  challengeurl={`${window.location.origin}/api/altcha/challenge`}
+                  onStateChange={handleAltchaStateChange}
+                  hidefooter={false}
+                  hidelogo={false}
+                />
               </div>
 
               <Button 
                 type="submit" 
                 className="w-full md:w-auto px-12" 
                 size="lg"
-                disabled={submitContactMutation.isPending || !humanVerified}
+                disabled={submitContactMutation.isPending || altchaState !== "verified"}
                 data-testid="button-submit-contact"
               >
                 {submitContactMutation.isPending ? "Sending..." : "Submit"}

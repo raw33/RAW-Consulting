@@ -349,3 +349,31 @@
     inset: -1px;
   }
 }
+
+/* ALTCHA Widget Styling - Match Brand Colors */
+altcha-widget {
+  --altcha-color-base: hsl(var(--primary));
+  --altcha-color-border: hsl(var(--border));
+  --altcha-color-text: hsl(var(--foreground));
+  --altcha-max-width: 100%;
+}
+
+altcha-widget::part(checkbox) {
+  border-color: hsl(var(--primary));
+}
+
+altcha-widget::part(checkbox):checked {
+  background-color: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+}
+
+altcha-widget::part(label) {
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+}
+
+altcha-widget::part(footer) {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
