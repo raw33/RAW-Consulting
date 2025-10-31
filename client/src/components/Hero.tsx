@@ -22,7 +22,7 @@ export default function Hero({ onContactClick }: HeroProps) {
           </h1>
           
           <p className="text-xl md:text-2xl text-white/90 max-w-2xl mb-12 leading-relaxed">
-            Expert fractional leadership and consulting services to scale your vision
+            BIG THINGS, can start small. Try our factional employment & see how we can transform your business!
           </p>
           
           <Button 
