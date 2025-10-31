@@ -35,7 +35,7 @@ export default function ContactForm() {
                   className="inline-flex items-center gap-3"
                 >
                   <SiLinkedin className="w-5 h-5" />
-                  Message Me on LinkedIn
+                  Message Rich on LinkedIn
                 </a>
               </Button>
             </div>
