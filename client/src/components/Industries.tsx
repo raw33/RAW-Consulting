@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import teamImage from "@assets/stock_images/business_team_collab_e07bb9a2.jpg";
 
 const industries = [
   "Medical Device Sales",
@@ -14,29 +14,38 @@ const industries = [
 
 export default function Industries() {
   return (
-    <section id="industries" className="py-16 md:py-20 lg:py-24 bg-card">
-      <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold mb-4">
-            Proven Success Across Diverse Industries
-          </h2>
-          <p className="text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
-            We've successfully helped build and scale businesses across multiple sectors, 
-            bringing specialized expertise and proven methodologies to each unique challenge.
-          </p>
-        </div>
-        
-        <div className="flex flex-wrap justify-center gap-3 md:gap-4 max-w-4xl mx-auto">
-          {industries.map((industry, index) => (
-            <Badge 
-              key={index} 
-              variant="secondary" 
-              className="px-4 py-2 text-sm md:text-base"
-              data-testid={`badge-industry-${index}`}
-            >
-              {industry}
-            </Badge>
-          ))}
+    <section id="industries" className="py-20 md:py-32 bg-card">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-semibold mb-6">
+              Industry Experience
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
+              We've successfully helped build and scale businesses across multiple sectors, 
+              bringing specialized expertise to each unique challenge.
+            </p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              {industries.map((industry, index) => (
+                <div 
+                  key={index}
+                  className="py-3 border-l-2 border-primary pl-4"
+                  data-testid={`text-industry-${index}`}
+                >
+                  <p className="font-medium">{industry}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="relative">
+            <img 
+              src={teamImage} 
+              alt="Business collaboration" 
+              className="w-full h-[500px] object-cover rounded-lg"
+            />
+          </div>
         </div>
       </div>
     </section>

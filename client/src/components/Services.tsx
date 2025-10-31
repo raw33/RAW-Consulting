@@ -1,56 +1,59 @@
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { TrendingUp, Code, Share2, Users } from "lucide-react";
+import { Users, TrendingUp, Code, Share2, Briefcase } from "lucide-react";
 
 const services = [
   {
+    icon: Briefcase,
+    title: "Fractional Leadership",
+    description: "CEO, CFO, CMO, HR, and Legal executives on demand. Get C-suite expertise without the full-time commitment.",
+  },
+  {
     icon: TrendingUp,
     title: "Business Development",
-    description: "Strategic planning and execution to scale your business. We help identify growth opportunities and create actionable roadmaps for sustainable success.",
+    description: "Strategic planning and execution to scale your business and identify sustainable growth opportunities.",
   },
   {
     icon: Code,
     title: "Web App MVP Development",
-    description: "Turn your ideas into market-ready minimum viable products. Fast, efficient development that validates your concept and attracts early adopters.",
+    description: "Turn your ideas into market-ready products. Fast, efficient development that validates your concept.",
   },
   {
     icon: Share2,
     title: "Social Media & Marketing",
-    description: "Compelling content creation and strategic marketing campaigns. Build your brand presence and engage your target audience effectively.",
+    description: "Compelling content creation and strategic campaigns to build your brand and engage your audience.",
   },
   {
     icon: Users,
     title: "Executive Coaching",
-    description: "One-on-one coaching to develop leadership skills and drive organizational excellence. Personalized guidance for founders and executives.",
+    description: "One-on-one coaching to develop leadership skills and drive organizational excellence.",
   },
 ];
 
 export default function Services() {
   return (
-    <section id="services" className="py-16 md:py-20 lg:py-24 bg-background">
-      <div className="max-w-7xl mx-auto px-6 md:px-8 lg:px-12">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold mb-4">
-            Our Services
+    <section id="services" className="py-20 md:py-32 bg-background">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16">
+        <div className="mb-16">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-semibold mb-6">
+            Services
           </h2>
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Comprehensive consulting solutions tailored to your business needs
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl">
+            Comprehensive consulting and fractional leadership solutions tailored to your business needs
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((service, index) => {
             const Icon = service.icon;
             return (
               <Card 
                 key={index} 
-                className="hover-elevate transition-all duration-200"
+                className="hover-elevate transition-all duration-200 border"
                 data-testid={`card-service-${index}`}
               >
                 <CardHeader className="space-y-4">
-                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-semibold">
+                  <Icon className="h-8 w-8 text-primary" />
+                  <h3 className="text-xl font-semibold">
                     {service.title}
                   </h3>
                 </CardHeader>
