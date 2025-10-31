@@ -22,7 +22,7 @@ export default function Hero({ onContactClick }: HeroProps) {
           </h1>
           
           <p className="text-xl md:text-2xl text-white/90 max-w-2xl mb-12 leading-relaxed">
-            <span className="text-3xl md:text-4xl font-bold">BIG THINGS</span>, can start <span className="text-lg md:text-xl font-light italic">small</span>. Try our <span className="text-2xl md:text-3xl font-bold text-primary">fractional employment</span> & see how we can transform your business!
+            Our <span className="text-2xl md:text-3xl font-bold text-primary">fractional employment</span> WILL transform your business.
           </p>
           
           <Button 
@@ -32,7 +32,7 @@ export default function Hero({ onContactClick }: HeroProps) {
             onClick={onContactClick}
             data-testid="button-schedule-consultation"
           >
-            GET STARTED
+            START TODAY
           </Button>
         </div>
       </div>
