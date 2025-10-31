@@ -1,4 +1,4 @@
-import teamImage from "@assets/stock_images/business_team_collab_e07bb9a2.jpg";
+import teamImage from "@assets/overhead office shot_1761878019142.png";
 
 const industries = [
   "Medical Device Sales",
@@ -42,7 +42,7 @@ export default function Industries() {
           <div className="relative">
             <img 
               src={teamImage} 
-              alt="Business collaboration" 
+              alt="Collaborative workspace overhead view" 
               className="w-full h-[500px] object-cover rounded-lg"
             />
           </div>
