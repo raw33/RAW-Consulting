@@ -1,106 +1,8 @@
-import { useState, useRef } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { insertContactSubmissionSchema, type InsertContactSubmission } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import Altcha from "@/components/Altcha";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SiLinkedin } from "react-icons/si";
 import collaborationImage from "@assets/setting view_1761878541418.png";
 
-const services = [
-  "Fractional CEO",
-  "Fractional CFO",
-  "Fractional CMO",
-  "Fractional HR",
-  "Fractional Legal",
-  "Business Development",
-  "Web App MVP Development",
-  "Social Media & Marketing",
-  "Executive Coaching",
-  "Other"
-];
-
 export default function ContactForm() {
-  const [altchaPayload, setAltchaPayload] = useState<string | null>(null);
-  const [altchaState, setAltchaState] = useState<string>("unverified");
-  const altchaRef = useRef<{ reset: () => void }>(null);
-  const { toast } = useToast();
-  
-  const form = useForm<InsertContactSubmission>({
-    resolver: zodResolver(insertContactSubmissionSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      company: "",
-      serviceInterest: undefined,
-      message: "",
-    },
-  });
-
-  const submitContactMutation = useMutation({
-    mutationFn: async (data: InsertContactSubmission & { altcha: string }) => {
-      const res = await apiRequest("POST", "/api/contact", data);
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Message Sent!",
-        description: "Thank you for reaching out. We'll be in touch soon.",
-      });
-      form.reset();
-      altchaRef.current?.reset();
-      setAltchaPayload(null);
-      setAltchaState("unverified");
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleAltchaStateChange = (state: any) => {
-    setAltchaState(state.state);
-    if (state.state === "verified" && state.payload) {
-      setAltchaPayload(state.payload);
-    }
-  };
-
-  const handleSubmit = async (data: InsertContactSubmission) => {
-    if (!altchaPayload || altchaState !== "verified") {
-      toast({
-        title: "Verification Required",
-        description: "Please complete the CAPTCHA verification to submit the form.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    submitContactMutation.mutate({ ...data, altcha: altchaPayload });
-  };
-
   return (
     <section id="contact" className="py-20 md:py-32 bg-background">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16">
@@ -118,164 +20,25 @@ export default function ContactForm() {
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-semibold mb-6">
                 Let's Work Together
               </h2>
-              <p className="text-lg md:text-xl text-muted-foreground">
-                Ready to transform your business? Get in touch to discuss your goals.
+              <p className="text-lg md:text-xl text-muted-foreground mb-8">
+                Ready to transform your business? I'd love to hear from you. Connect with me on LinkedIn to start a conversation about your goals.
               </p>
-            </div>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Your name" 
-                          {...field} 
-                          data-testid="input-name"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="your@email.com" 
-                          {...field} 
-                          data-testid="input-email"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="tel" 
-                          placeholder="(555) 123-4567" 
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="input-phone"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="company"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Company</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Company name" 
-                          {...field}
-                          value={field.value || ""}
-                          data-testid="input-company"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="serviceInterest"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Service Interest</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value || undefined}
-                      key={field.value || 'empty'}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-service">
-                          <SelectValue placeholder="Select a service" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {services.map((service) => (
-                          <SelectItem key={service} value={service}>
-                            {service}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="message"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Message *</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Tell us about your project or goals..." 
-                        className="min-h-32 resize-none"
-                        {...field} 
-                        data-testid="input-message"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="pt-4" data-testid="altcha-container">
-                <label className="block text-sm font-medium mb-3">
-                  Verify you're human *
-                </label>
-                <Altcha
-                  ref={altchaRef}
-                  challengeurl={`${window.location.origin}/api/altcha/challenge`}
-                  onStateChange={handleAltchaStateChange}
-                  hidefooter={false}
-                  hidelogo={false}
-                />
-              </div>
-
               <Button 
-                type="submit" 
-                className="w-full md:w-auto px-12" 
+                asChild
                 size="lg"
-                disabled={submitContactMutation.isPending || altchaState !== "verified"}
-                data-testid="button-submit-contact"
+                data-testid="button-linkedin-message"
               >
-                {submitContactMutation.isPending ? "Sending..." : "Submit"}
+                <a 
+                  href="https://www.linkedin.com/in/richward3/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-3"
+                >
+                  <SiLinkedin className="w-5 h-5" />
+                  Message Me on LinkedIn
+                </a>
               </Button>
-            </form>
-          </Form>
+            </div>
           </div>
         </div>
       </div>
