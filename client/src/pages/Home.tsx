@@ -1,6 +1,7 @@
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import Services from "@/components/Services";
+import WebAppSamples from "@/components/WebAppSamples";
 import Industries from "@/components/Industries";
 import Results from "@/components/Results";
 import ContactForm from "@/components/ContactForm";
@@ -19,6 +20,7 @@ export default function Home() {
       <Navigation onContactClick={scrollToContact} />
       <Hero onContactClick={scrollToContact} />
       <Services />
+      <WebAppSamples />
       <Results />
       <Industries />
       <ContactForm />
