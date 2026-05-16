@@ -2,7 +2,6 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
-import { createChallenge, verifySolution } from "altcha-lib";
 import { sendEmail } from "./mailer";
 
 const contactSchema = z.object({
@@ -11,42 +10,21 @@ const contactSchema = z.object({
   phone: z.string().optional(),
   company: z.string().optional(),
   message: z.string().min(10, "Message must be at least 10 characters"),
+  website: z.string().optional(), // honeypot — must be empty
 });
 
 const RECIPIENT_EMAIL = "richward33@gmail.com";
-const ALTCHA_HMAC_KEY = process.env.ALTCHA_HMAC_KEY || "default-insecure-key-change-in-production";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // ALTCHA challenge generation endpoint
-  app.get("/api/altcha/challenge", async (req, res) => {
-    try {
-      const challenge = await createChallenge({
-        hmacKey: ALTCHA_HMAC_KEY,
-        maxNumber: 100000,
-        algorithm: "SHA-256",
-        saltLength: 12,
-      });
-      res.json(challenge);
-    } catch (error: any) {
-      console.error("Error creating ALTCHA challenge:", error);
-      res.status(500).json({ error: "Failed to create challenge" });
-    }
-  });
-
   app.post("/api/contact", async (req, res) => {
     try {
-      const { altcha, ...formFields } = req.body;
+      const validatedData = contactSchema.parse(req.body);
 
-      // Verify CAPTCHA
-      if (!altcha) {
-        return res.status(400).json({ success: false, error: "CAPTCHA verification required" });
+      // Honeypot check — bots fill this in, humans don't see it
+      if (validatedData.website) {
+        // Silently succeed so bots don't know they were blocked
+        return res.status(200).json({ success: true, message: "Message sent." });
       }
-      const captchaValid = await verifySolution(altcha, ALTCHA_HMAC_KEY);
-      if (!captchaValid) {
-        return res.status(400).json({ success: false, error: "Invalid CAPTCHA. Please try again." });
-      }
-
-      const validatedData = contactSchema.parse(formFields);
 
       const now = new Date();
       const dateTimeStr = now.toLocaleString("en-US", {

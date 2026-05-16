@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SiLinkedin } from "react-icons/si";
-import Altcha from "@/components/Altcha";
 import {
   Form,
   FormControl,
@@ -32,9 +31,8 @@ type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactForm() {
   const [submitted, setSubmitted] = useState(false);
-  const [altchaPayload, setAltchaPayload] = useState<string | null>(null);
-  const [altchaState, setAltchaState] = useState<string>("unverified");
-  const altchaRef = useRef<{ reset: () => void }>(null);
+  // Honeypot field — invisible to humans, bots fill it in
+  const [honeypot, setHoneypot] = useState("");
   const { toast } = useToast();
 
   const form = useForm<ContactFormData>({
@@ -49,16 +47,16 @@ export default function ContactForm() {
   });
 
   const submitMutation = useMutation({
-    mutationFn: async (data: ContactFormData & { altcha: string }) => {
+    mutationFn: async (data: ContactFormData & { website: string }) => {
       const res = await apiRequest("POST", "/api/contact", data);
-      return await res.json();
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to send");
+      return json;
     },
     onSuccess: () => {
       setSubmitted(true);
       form.reset();
-      altchaRef.current?.reset();
-      setAltchaPayload(null);
-      setAltchaState("unverified");
+      setHoneypot("");
     },
     onError: (error: any) => {
       toast({
@@ -69,23 +67,8 @@ export default function ContactForm() {
     },
   });
 
-  const handleAltchaStateChange = (state: any) => {
-    setAltchaState(state.state);
-    if (state.state === "verified" && state.payload) {
-      setAltchaPayload(state.payload);
-    }
-  };
-
   const handleSubmit = (data: ContactFormData) => {
-    if (!altchaPayload || altchaState !== "verified") {
-      toast({
-        title: "Verification required",
-        description: "Please complete the bot check before sending.",
-        variant: "destructive",
-      });
-      return;
-    }
-    submitMutation.mutate({ ...data, altcha: altchaPayload });
+    submitMutation.mutate({ ...data, website: honeypot });
   };
 
   return (
@@ -122,10 +105,21 @@ export default function ContactForm() {
               </div>
             ) : (
               <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(handleSubmit)}
-                  className="space-y-6"
-                >
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                  {/* Honeypot — hidden from humans, catches bots */}
+                  <div style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, overflow: "hidden" }} aria-hidden="true">
+                    <label htmlFor="website">Website</label>
+                    <input
+                      id="website"
+                      name="website"
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                    />
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -147,12 +141,7 @@ export default function ContactForm() {
                         <FormItem>
                           <FormLabel>Email *</FormLabel>
                           <FormControl>
-                            <Input
-                              type="email"
-                              placeholder="your@email.com"
-                              {...field}
-                              data-testid="input-email"
-                            />
+                            <Input type="email" placeholder="your@email.com" {...field} data-testid="input-email" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -168,13 +157,7 @@ export default function ContactForm() {
                         <FormItem>
                           <FormLabel>Phone</FormLabel>
                           <FormControl>
-                            <Input
-                              type="tel"
-                              placeholder="(555) 123-4567"
-                              {...field}
-                              value={field.value || ""}
-                              data-testid="input-phone"
-                            />
+                            <Input type="tel" placeholder="(555) 123-4567" {...field} value={field.value || ""} data-testid="input-phone" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -187,12 +170,7 @@ export default function ContactForm() {
                         <FormItem>
                           <FormLabel>Company</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Company name"
-                              {...field}
-                              value={field.value || ""}
-                              data-testid="input-company"
-                            />
+                            <Input placeholder="Company name" {...field} value={field.value || ""} data-testid="input-company" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -219,24 +197,11 @@ export default function ContactForm() {
                     )}
                   />
 
-                  <div data-testid="altcha-container">
-                    <label className="block text-sm font-medium mb-3">
-                      Verify you're not a robot *
-                    </label>
-                    <Altcha
-                      ref={altchaRef}
-                      challengeurl={`${window.location.origin}/api/altcha/challenge`}
-                      onStateChange={handleAltchaStateChange}
-                      hidefooter={false}
-                      hidelogo={false}
-                    />
-                  </div>
-
                   <div className="flex flex-wrap items-center gap-4 pt-2">
                     <Button
                       type="submit"
                       size="lg"
-                      disabled={submitMutation.isPending || altchaState !== "verified"}
+                      disabled={submitMutation.isPending}
                       data-testid="button-submit-contact"
                     >
                       {submitMutation.isPending ? "Sending..." : "Send Message"}
