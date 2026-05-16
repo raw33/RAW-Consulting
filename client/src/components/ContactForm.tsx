@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SiLinkedin } from "react-icons/si";
+import Altcha from "@/components/Altcha";
 import {
   Form,
   FormControl,
@@ -31,6 +32,9 @@ type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactForm() {
   const [submitted, setSubmitted] = useState(false);
+  const [altchaPayload, setAltchaPayload] = useState<string | null>(null);
+  const [altchaState, setAltchaState] = useState<string>("unverified");
+  const altchaRef = useRef<{ reset: () => void }>(null);
   const { toast } = useToast();
 
   const form = useForm<ContactFormData>({
@@ -45,13 +49,16 @@ export default function ContactForm() {
   });
 
   const submitMutation = useMutation({
-    mutationFn: async (data: ContactFormData) => {
+    mutationFn: async (data: ContactFormData & { altcha: string }) => {
       const res = await apiRequest("POST", "/api/contact", data);
       return await res.json();
     },
     onSuccess: () => {
       setSubmitted(true);
       form.reset();
+      altchaRef.current?.reset();
+      setAltchaPayload(null);
+      setAltchaState("unverified");
     },
     onError: (error: any) => {
       toast({
@@ -61,6 +68,25 @@ export default function ContactForm() {
       });
     },
   });
+
+  const handleAltchaStateChange = (state: any) => {
+    setAltchaState(state.state);
+    if (state.state === "verified" && state.payload) {
+      setAltchaPayload(state.payload);
+    }
+  };
+
+  const handleSubmit = (data: ContactFormData) => {
+    if (!altchaPayload || altchaState !== "verified") {
+      toast({
+        title: "Verification required",
+        description: "Please complete the bot check before sending.",
+        variant: "destructive",
+      });
+      return;
+    }
+    submitMutation.mutate({ ...data, altcha: altchaPayload });
+  };
 
   return (
     <section id="contact" className="py-20 md:py-32 bg-background">
@@ -97,7 +123,7 @@ export default function ContactForm() {
             ) : (
               <Form {...form}>
                 <form
-                  onSubmit={form.handleSubmit((data) => submitMutation.mutate(data))}
+                  onSubmit={form.handleSubmit(handleSubmit)}
                   className="space-y-6"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -193,11 +219,24 @@ export default function ContactForm() {
                     )}
                   />
 
+                  <div data-testid="altcha-container">
+                    <label className="block text-sm font-medium mb-3">
+                      Verify you're not a robot *
+                    </label>
+                    <Altcha
+                      ref={altchaRef}
+                      challengeurl={`${window.location.origin}/api/altcha/challenge`}
+                      onStateChange={handleAltchaStateChange}
+                      hidefooter={false}
+                      hidelogo={false}
+                    />
+                  </div>
+
                   <div className="flex flex-wrap items-center gap-4 pt-2">
                     <Button
                       type="submit"
                       size="lg"
-                      disabled={submitMutation.isPending}
+                      disabled={submitMutation.isPending || altchaState !== "verified"}
                       data-testid="button-submit-contact"
                     >
                       {submitMutation.isPending ? "Sending..." : "Send Message"}
