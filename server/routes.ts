@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
 import { createChallenge, verifySolution } from "altcha-lib";
-import { createGmailTransport } from "./mailer";
+import { sendEmail } from "./mailer";
 
 const contactSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -71,14 +71,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         <p>${validatedData.message.replace(/\n/g, "<br>")}</p>
       `;
 
-      const transporter = createGmailTransport();
-
-      await transporter.sendMail({
-        from: `"RAW Consulting Website" <${process.env.GMAIL_USER}>`,
+      await sendEmail({
         to: RECIPIENT_EMAIL,
-        replyTo: validatedData.email,
         subject,
         html: htmlBody,
+        replyTo: validatedData.email,
       });
 
       console.log(`[contact] Email sent to ${RECIPIENT_EMAIL} from ${validatedData.email}`);
