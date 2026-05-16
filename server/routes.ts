@@ -2,8 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { fromError } from "zod-validation-error";
-import { getUncachableResendClient } from "./resend";
 import { createChallenge, verifySolution } from "altcha-lib";
+import { createGmailTransport } from "./mailer";
 
 const contactSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -11,7 +11,6 @@ const contactSchema = z.object({
   phone: z.string().optional(),
   company: z.string().optional(),
   message: z.string().min(10, "Message must be at least 10 characters"),
-  altcha: z.string().min(1, "CAPTCHA verification required"),
 });
 
 const RECIPIENT_EMAIL = "richward33@gmail.com";
@@ -38,7 +37,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { altcha, ...formFields } = req.body;
 
-      // Verify CAPTCHA first
+      // Verify CAPTCHA
       if (!altcha) {
         return res.status(400).json({ success: false, error: "CAPTCHA verification required" });
       }
@@ -47,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ success: false, error: "Invalid CAPTCHA. Please try again." });
       }
 
-      const validatedData = contactSchema.omit({ altcha: true }).parse(formFields);
+      const validatedData = contactSchema.parse(formFields);
 
       const now = new Date();
       const dateTimeStr = now.toLocaleString("en-US", {
@@ -72,28 +71,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         <p>${validatedData.message.replace(/\n/g, "<br>")}</p>
       `;
 
-      const { client, fromEmail } = await getUncachableResendClient();
-      const sender = fromEmail || "onboarding@resend.dev";
+      const transporter = createGmailTransport();
 
-      console.log(`[contact] Sending email from=${sender} to=${RECIPIENT_EMAIL} subject="${subject}"`);
-
-      const { data, error } = await client.emails.send({
-        from: sender,
+      await transporter.sendMail({
+        from: `"RAW Consulting Website" <${process.env.GMAIL_USER}>`,
         to: RECIPIENT_EMAIL,
+        replyTo: validatedData.email,
         subject,
         html: htmlBody,
-        replyTo: validatedData.email,
       });
 
-      if (error) {
-        console.error("[contact] Resend error:", JSON.stringify(error));
-        return res.status(500).json({
-          success: false,
-          error: "Failed to send email. Please try again or message us on LinkedIn.",
-        });
-      }
-
-      console.log("[contact] Email sent successfully, id:", data?.id);
+      console.log(`[contact] Email sent to ${RECIPIENT_EMAIL} from ${validatedData.email}`);
 
       res.status(200).json({
         success: true,
@@ -104,32 +92,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validationError = fromError(error);
         return res.status(400).json({ success: false, error: validationError.message });
       }
-      console.error("[contact] Unexpected error:", error);
+      console.error("[contact] Error:", error.message);
       res.status(500).json({ success: false, error: "An error occurred. Please try again later." });
-    }
-  });
-
-  // Temporary email test endpoint - remove after confirming delivery
-  app.get("/api/test-email", async (req, res) => {
-    try {
-      const { client, fromEmail } = await getUncachableResendClient();
-      const sender = fromEmail || "onboarding@resend.dev";
-      console.log(`[test-email] fromEmail from connection: "${fromEmail}", using sender: "${sender}"`);
-      const { data, error } = await client.emails.send({
-        from: sender,
-        to: RECIPIENT_EMAIL,
-        subject: "RAW Consulting - Email Test",
-        html: "<p>This is a test email to confirm Resend is configured correctly.</p>",
-      });
-      if (error) {
-        console.error("[test-email] Resend error:", JSON.stringify(error));
-        return res.status(500).json({ success: false, error, sender });
-      }
-      console.log("[test-email] Success:", data);
-      res.json({ success: true, data, sender });
-    } catch (err: any) {
-      console.error("[test-email] Exception:", err.message);
-      res.status(500).json({ success: false, error: err.message });
     }
   });
 
