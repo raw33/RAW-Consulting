@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import heroImage from "@assets/zoomed in office shot_1761876697844.png";
+import heroImage from "@assets/hero-office.jpg";
 
 interface HeroProps {
   onContactClick?: () => void;

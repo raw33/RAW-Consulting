@@ -1,4 +1,4 @@
-import teamImage from "@assets/overhead office shot_1761878019142.png";
+import teamImage from "@assets/industries-office.jpg";
 
 const industries = [
   "Medical Device Sales",

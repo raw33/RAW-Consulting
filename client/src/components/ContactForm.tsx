@@ -1,10 +1,6 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,7 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import collaborationImage from "@assets/setting view_1761878541418.png";
+import collaborationImage from "@assets/contact-workspace.jpg";
 
 const contactSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -30,11 +26,6 @@ const contactSchema = z.object({
 type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactForm() {
-  const [submitted, setSubmitted] = useState(false);
-  // Honeypot field — invisible to humans, bots fill it in
-  const [honeypot, setHoneypot] = useState("");
-  const { toast } = useToast();
-
   const form = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
     defaultValues: {
@@ -46,29 +37,20 @@ export default function ContactForm() {
     },
   });
 
-  const submitMutation = useMutation({
-    mutationFn: async (data: ContactFormData & { website: string }) => {
-      const res = await apiRequest("POST", "/api/contact", data);
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Failed to send");
-      return json;
-    },
-    onSuccess: () => {
-      setSubmitted(true);
-      form.reset();
-      setHoneypot("");
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Something went wrong",
-        description: error.message || "Please try again later.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleSubmit = (data: ContactFormData) => {
-    submitMutation.mutate({ ...data, website: honeypot });
+    const subject = encodeURIComponent(`RAW Consulting website inquiry from ${data.name}`);
+    const body = encodeURIComponent(
+      [
+        `Name: ${data.name}`,
+        `Email: ${data.email}`,
+        `Phone: ${data.phone || "Not provided"}`,
+        `Company: ${data.company || "Not provided"}`,
+        "",
+        data.message,
+      ].join("\n"),
+    );
+
+    window.location.href = `mailto:richward33@gmail.com?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -93,33 +75,8 @@ export default function ContactForm() {
               </p>
             </div>
 
-            {submitted ? (
-              <div className="py-12 text-center" data-testid="success-message">
-                <h3 className="text-2xl font-semibold mb-3">Message Sent!</h3>
-                <p className="text-muted-foreground mb-6">
-                  Thanks for reaching out. Rich will be in touch with you soon.
-                </p>
-                <Button variant="outline" onClick={() => setSubmitted(false)} data-testid="button-send-another">
-                  Send Another Message
-                </Button>
-              </div>
-            ) : (
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                  {/* Honeypot — hidden from humans, catches bots */}
-                  <div style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0, overflow: "hidden" }} aria-hidden="true">
-                    <label htmlFor="website">Website</label>
-                    <input
-                      id="website"
-                      name="website"
-                      type="text"
-                      tabIndex={-1}
-                      autoComplete="off"
-                      value={honeypot}
-                      onChange={(e) => setHoneypot(e.target.value)}
-                    />
-                  </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
@@ -201,10 +158,9 @@ export default function ContactForm() {
                     <Button
                       type="submit"
                       size="lg"
-                      disabled={submitMutation.isPending}
                       data-testid="button-submit-contact"
                     >
-                      {submitMutation.isPending ? "Sending..." : "Send Message"}
+                      Open Email Draft
                     </Button>
 
                     <Button asChild size="lg" variant="outline" data-testid="button-linkedin-message">
@@ -221,7 +177,6 @@ export default function ContactForm() {
                   </div>
                 </form>
               </Form>
-            )}
           </div>
         </div>
       </div>
